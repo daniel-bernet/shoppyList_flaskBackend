@@ -5,6 +5,7 @@ from app import db
 from app.models import User
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_jwt_extended import jwt_required
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -54,3 +55,9 @@ def login():
         'message': 'Login successful',
         'access_token': access_token
         }), 200
+
+# Token Validation Endpoint
+@current_app.route('/validate-token', methods=['GET'])
+@jwt_required()
+def validate_token():
+    return jsonify({'message': 'Token is valid'}), 200
