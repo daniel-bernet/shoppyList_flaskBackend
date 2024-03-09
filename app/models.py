@@ -16,3 +16,14 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class ShoppingList(db.Model):
+    __tablename__ = 'shopping_list'
+    
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    title = db.Column(db.String(120), nullable=False)
+    owner_id = db.Column(UUID(as_uuid=True), db.ForeignKey('account.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    owner = db.relationship('User', backref=db.backref('shopping_lists', lazy=True))

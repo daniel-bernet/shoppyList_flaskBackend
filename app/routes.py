@@ -2,10 +2,10 @@
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from app import db
-from app.models import User
+from app.models import User, ShoppingList
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -32,7 +32,6 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    # Generate JWT token
     access_token = create_access_token(identity=email)
 
     return jsonify({
@@ -61,3 +60,43 @@ def login():
 @jwt_required()
 def validate_token():
     return jsonify({'message': 'Token is valid'}), 200
+
+# Endpoint to create a shopping list
+@current_app.route('/shopping_lists', methods=['POST'])
+@jwt_required()
+def create_shopping_list():
+    data = request.get_json()
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    if 'title' not in data:
+        return jsonify({'message': 'Title is required'}), 400
+    
+    shopping_list = ShoppingList(title=data['title'], owner_id=user.id)
+    db.session.add(shopping_list)
+    db.session.commit()
+
+    return jsonify({'message': 'Shopping list created successfully', 'shopping_list_id': str(shopping_list.id)}), 201
+
+# Endpoint to delete a shopping list
+@current_app.route('/shopping_lists/<list_id>', methods=['DELETE'])
+@jwt_required()
+def delete_shopping_list(list_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id, owner_id=user.id).first()
+
+    if not shopping_list:
+        return jsonify({'message': 'Shopping list not found or you do not have permission to delete it'}), 404
+
+    db.session.delete(shopping_list)
+    db.session.commit()
+
+    return jsonify({'message': 'Shopping list deleted successfully'}), 200
