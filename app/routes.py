@@ -100,3 +100,93 @@ def delete_shopping_list(list_id):
     db.session.commit()
 
     return jsonify({'message': 'Shopping list deleted successfully'}), 200
+
+# Endpoint to add a collaborator to a shopping list
+@current_app.route('/shopping_lists/<list_id>/collaborators', methods=['POST'])
+@jwt_required()
+def add_collaborator(list_id):
+    user_email = get_jwt_identity()
+    owner = User.query.filter_by(email=user_email).first()
+    shopping_list = ShoppingList.query.filter_by(id=list_id, owner_id=owner.id).first()
+
+    if not shopping_list:
+        return jsonify({'message': 'Shopping list not found'}), 404
+
+    data = request.get_json()
+    collaborator_email = data.get('email')
+    collaborator = User.query.filter_by(email=collaborator_email).first()
+
+    if not collaborator:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list.collaborators.append(collaborator)
+    db.session.commit()
+
+    return jsonify({'message': 'Collaborator added successfully'}), 200
+
+# Endpoint to remove a collaborator from a shopping list
+@current_app.route('/shopping_lists/<list_id>/collaborators/<collaborator_email>', methods=['DELETE'])
+@jwt_required()
+def remove_collaborator(list_id, collaborator_email):
+    user_email = get_jwt_identity()
+    owner = User.query.filter_by(email=user_email).first()
+    shopping_list = ShoppingList.query.filter_by(id=list_id, owner_id=owner.id).first()
+
+    if not shopping_list:
+        return jsonify({'message': 'Shopping list not found'}), 404
+
+    collaborator = User.query.filter_by(email=collaborator_email).first()
+
+    if not collaborator or collaborator not in shopping_list.collaborators:
+        return jsonify({'message': 'Collaborator not found'}), 404
+
+    shopping_list.collaborators.remove(collaborator)
+    db.session.commit()
+
+    return jsonify({'message': 'Collaborator removed successfully'}), 200
+
+
+# Enpoint to get all owned and collaborating lists
+@current_app.route('/shopping_lists', methods=['GET'])
+@jwt_required()
+def get_all_lists():
+    current_user_email = get_jwt_identity()
+    user = User.query.filter_by(email=current_user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    owned_lists = user.owned_shopping_lists.all()
+    collaborating_lists = user.collaborating_shopping_lists.all()
+    all_lists = owned_lists + collaborating_lists
+
+    lists_data = [{
+        'id': shop_list.id,
+        'title': shop_list.title,
+        'created_at': shop_list.created_at.isoformat(),
+        'updated_at': shop_list.updated_at.isoformat(),
+        'owner': shop_list.owner.username, 
+        'collaborators': [collaborator.username for collaborator in shop_list.collaborators],
+        'is_owner': shop_list.owner_id == user.id
+    } for shop_list in all_lists]
+
+    return jsonify(lists_data), 200
+
+# Endpoint to leave a shopping list as a collaborator
+@current_app.route('/shopping_lists/<list_id>/leave', methods=['POST'])
+@jwt_required()
+def leave_list(list_id):
+    user_email = get_jwt_identity()
+    collaborator = User.query.filter_by(email=user_email).first()
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+
+    if not shopping_list:
+        return jsonify({'message': 'Shopping list not found'}), 404
+
+    if collaborator not in shopping_list.collaborators:
+        return jsonify({'message': 'You are not a collaborator of this list'}), 403
+
+    shopping_list.collaborators.remove(collaborator)
+    db.session.commit()
+
+    return jsonify({'message': 'You have successfully left the list'}), 200
