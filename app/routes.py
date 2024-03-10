@@ -2,7 +2,7 @@
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from app import db
-from app.models import User, ShoppingList
+from app.models import User, ShoppingList, Product
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -190,3 +190,35 @@ def leave_list(list_id):
     db.session.commit()
 
     return jsonify({'message': 'You have successfully left the list'}), 200
+
+# Endpoint to add a product to a shopping list
+@current_app.route('/shopping_lists/<list_id>/products', methods=['POST'])
+@jwt_required()
+def add_product(list_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+
+    if not shopping_list or (user != shopping_list.owner and user not in shopping_list.collaborators):
+        return jsonify({'message': 'Shopping list not found or access denied'}), 403
+
+    data = request.get_json()
+    if not all(key in data for key in ['name', 'quantity', 'unit_of_measurement']):
+        return jsonify({'message': 'Missing product data (name, quantity, unit_of_measurement required)'}), 400
+
+    product = Product(
+        name=data['name'],
+        quantity=data['quantity'],
+        unit_of_measurement=data['unit_of_measurement'],
+        creator_id=user.id,
+        shopping_list_id=shopping_list.id
+    )
+
+    db.session.add(product)
+    db.session.commit()
+
+    return jsonify({'message': 'Product added successfully', 'product_id': str(product.id)}), 201
