@@ -4,7 +4,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Association table for the many-to-many relationship
 shopping_list_collaborators = db.Table(
     'shopping_list_collaborators',
     db.Column('shopping_list_id', UUID(as_uuid=True), db.ForeignKey('shopping_list.id'), primary_key=True),
@@ -37,3 +36,18 @@ class ShoppingList(db.Model):
     owner = db.relationship('User', backref=db.backref('owned_shopping_lists', lazy='dynamic'))
     collaborators = db.relationship('User', secondary=shopping_list_collaborators,
                                     backref=db.backref('collaborating_shopping_lists', lazy='dynamic'))
+
+class Product(db.Model):
+    __tablename__ = 'product'
+
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_of_measurement = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    creator_id = db.Column(UUID(as_uuid=True), db.ForeignKey('account.id'), nullable=False)
+    shopping_list_id = db.Column(UUID(as_uuid=True), db.ForeignKey('shopping_list.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    creator = db.relationship('User', backref=db.backref('created_products', lazy='dynamic'))
+    shopping_list = db.relationship('ShoppingList', backref=db.backref('products', lazy='dynamic'))
