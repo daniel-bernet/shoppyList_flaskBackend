@@ -1,4 +1,5 @@
 # app/routes.py
+from datetime import datetime
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from app import db
@@ -274,3 +275,43 @@ def delete_product(list_id, product_id):
     db.session.commit()
 
     return jsonify({'message': 'Product deleted successfully'}), 200
+
+# Endpoint to update a product's details in a shopping list
+@current_app.route('/shopping_lists/<list_id>/products/<product_id>', methods=['PUT'])
+@jwt_required()
+def update_product(list_id, product_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+    product = Product.query.filter_by(id=product_id, shopping_list_id=list_id).first()
+
+    if not shopping_list or not product:
+        return jsonify({'message': 'Shopping list or product not found'}), 404
+    if user != shopping_list.owner and user not in shopping_list.collaborators:
+        return jsonify({'message': 'Access denied'}), 403
+
+    data = request.get_json()
+    product.name = data.get('name', product.name)
+    product.quantity = data.get('quantity', product.quantity)
+    product.unit_of_measurement = data.get('unit_of_measurement', product.unit_of_measurement)
+    product.creator_id = user.id
+    product.updated_at = datetime.utcnow()
+
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Product details updated successfully',
+        'product': {
+            'id': product.id,
+            'name': product.name,
+            'quantity': product.quantity,
+            'unit_of_measurement': product.unit_of_measurement,
+            'creator': product.creator.username,
+            'created_at': product.created_at.isoformat(),
+            'updated_at': product.updated_at.isoformat(),
+        }
+    }), 200
