@@ -125,9 +125,9 @@ def add_collaborator(list_id):
     return jsonify({'message': 'Collaborator added successfully'}), 200
 
 # Endpoint to remove a collaborator from a shopping list
-@current_app.route('/shopping_lists/<list_id>/collaborators/<collaborator_email>', methods=['DELETE'])
+@current_app.route('/shopping_lists/<list_id>/collaborators/<collaborator_username>', methods=['DELETE'])
 @jwt_required()
-def remove_collaborator(list_id, collaborator_email):
+def remove_collaborator(list_id, collaborator_username):
     user_email = get_jwt_identity()
     owner = User.query.filter_by(email=user_email).first()
     shopping_list = ShoppingList.query.filter_by(id=list_id, owner_id=owner.id).first()
@@ -135,7 +135,7 @@ def remove_collaborator(list_id, collaborator_email):
     if not shopping_list:
         return jsonify({'message': 'Shopping list not found'}), 404
 
-    collaborator = User.query.filter_by(email=collaborator_email).first()
+    collaborator = User.query.filter_by(username=collaborator_username).first()
 
     if not collaborator or collaborator not in shopping_list.collaborators:
         return jsonify({'message': 'Collaborator not found'}), 404
