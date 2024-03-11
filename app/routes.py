@@ -222,3 +222,55 @@ def add_product(list_id):
     db.session.commit()
 
     return jsonify({'message': 'Product added successfully', 'product_id': str(product.id)}), 201
+
+# Endpoint to get products of a shopping list
+@current_app.route('/shopping_lists/<list_id>/products', methods=['GET'])
+@jwt_required()
+def get_products(list_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+
+    if not shopping_list or (user != shopping_list.owner and user not in shopping_list.collaborators):
+        return jsonify({'message': 'Shopping list not found or access denied'}), 403
+
+    products = Product.query.filter_by(shopping_list_id=shopping_list.id).all()
+
+    product_details = [{
+        'id': product.id,
+        'name': product.name,
+        'quantity': product.quantity,
+        'unit_of_measurement': product.unit_of_measurement,
+        'creator': product.creator.username,
+        'created_at': product.created_at.isoformat(),
+        'updated_at': product.updated_at.isoformat()
+    } for product in products]
+
+    return jsonify(product_details), 200
+
+# Endpoint to delete a product from a shopping list
+@current_app.route('/shopping_lists/<list_id>/products/<product_id>', methods=['DELETE'])
+@jwt_required()
+def delete_product(list_id, product_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+    product = Product.query.filter_by(id=product_id, shopping_list_id=list_id).first()
+
+    if not shopping_list or not product:
+        return jsonify({'message': 'Shopping list or product not found'}), 404
+    if user != shopping_list.owner and user not in shopping_list.collaborators:
+        return jsonify({'message': 'Access denied'}), 403
+
+    db.session.delete(product)
+    db.session.commit()
+
+    return jsonify({'message': 'Product deleted successfully'}), 200
