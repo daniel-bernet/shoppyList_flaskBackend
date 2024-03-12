@@ -315,3 +315,34 @@ def update_product(list_id, product_id):
             'updated_at': product.updated_at.isoformat(),
         }
     }), 200
+
+# Endpoint to delete multiple products from a shopping list
+@current_app.route('/shopping_lists/<list_id>/products/batch_delete', methods=['POST'])
+@jwt_required()
+def delete_multiple_products(list_id):
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+
+    if not shopping_list:
+        return jsonify({'message': 'Shopping list not found'}), 404
+    if user != shopping_list.owner and user not in shopping_list.collaborators:
+        return jsonify({'message': 'Access denied'}), 403
+
+    data = request.get_json()
+    product_ids = data.get('product_ids', [])
+
+    if not product_ids:
+        return jsonify({'message': 'No product IDs provided'}), 400
+
+    for product_id in product_ids:
+        product = Product.query.filter_by(id=product_id, shopping_list_id=list_id).first()
+        if product:
+            db.session.delete(product)
+
+    db.session.commit()
+    return jsonify({'message': 'Products deleted successfully'}), 200
