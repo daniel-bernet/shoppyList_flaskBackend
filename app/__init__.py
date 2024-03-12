@@ -16,14 +16,13 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:my_shop_database@192.168.100.88:5432/shop_list'
     app.config['SECRET_KEY'] = 'your_secret_key'
     app.config['JWT_SECRET_KEY'] = 'super-secret-jwt-key'
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
 
     with app.app_context():
-        from app import routes, models
+
 
         db.create_all()
 
