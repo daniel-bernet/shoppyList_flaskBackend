@@ -4,5 +4,7 @@ from waitress import serve
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')  # Development server
-    # serve(app, host='0.0.0.0', port=5000)  # Waitress server
+    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')  # Development
+    # serve(app, host='0.0.0.0', port=5000)  # Production (Waitress server)
+
+#venv\Scripts\activate
