@@ -12,8 +12,8 @@ limiter = Limiter(key_func=get_remote_address)
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:my_shop_database@192.168.100.88:5432/shop_list'
-    app.config['SECRET_KEY'] = 'your_secret_key'
-    app.config['JWT_SECRET_KEY'] = 'super-secret-jwt-key'
+    app.config['SECRET_KEY'] = '0872c39786gtm0a87gt0wmv*ç%&/(37ga087g46WVC623ANB'
+    app.config['JWT_SECRET_KEY'] = '80CMAGQ02387G,0A7WXG67GC0WG*ç%&/()VG70CMG70'
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(weeks=25)
 
