@@ -108,6 +108,56 @@ def change_password():
 
     return jsonify({'message': 'Password changed successfully'}), 200
 
+# Endpoint to edit username
+@current_app.route('/edit_username', methods=['POST'])
+@jwt_required()
+def edit_username():
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    data = request.get_json()
+    new_username = data.get('new_username')
+    current_password = data.get('current_password')
+
+    if not user.check_password(current_password):
+        return jsonify({'message': 'Invalid password'}), 401
+
+    if User.query.filter_by(username=new_username).first():
+        return jsonify({'message': 'Username already exists'}), 400
+
+    user.username = new_username
+    db.session.commit()
+
+    return jsonify({'message': 'Username updated successfully'}), 200
+
+# Endpoint to edit email
+@current_app.route('/edit_email', methods=['POST'])
+@jwt_required()
+def edit_email():
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    data = request.get_json()
+    new_email = data.get('new_email')
+    current_password = data.get('current_password')
+
+    if not user.check_password(current_password):
+        return jsonify({'message': 'Invalid password'}), 401
+
+    if User.query.filter_by(email=new_email).first():
+        return jsonify({'message': 'Email already exists'}), 400
+
+    user.email = new_email
+    db.session.commit()
+
+    return jsonify({'message': 'Email updated successfully'}), 200
+
 # Enpoint for account deletion
 @current_app.route('/delete_account', methods=['DELETE'])
 @jwt_required()
@@ -211,7 +261,9 @@ def add_collaborator(list_id):
     if not collaborator:
         return jsonify({'message': 'User not found'}), 404
 
+    shopping_list.updated_at = datetime.utcnow()
     shopping_list.collaborators.append(collaborator)
+
     db.session.commit()
 
     return jsonify({'message': 'Collaborator added successfully'}), 200
@@ -234,6 +286,7 @@ def remove_collaborator(list_id, collaborator_username):
 
     Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
 
+    shopping_list.updated_at = datetime.utcnow()
     shopping_list.collaborators.remove(collaborator)
 
     db.session.commit()
@@ -281,8 +334,10 @@ def leave_list(list_id):
         return jsonify({'message': 'You are not a collaborator of this list'}), 403
 
     Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
-
+    
+    shopping_list.updated_at = datetime.utcnow()
     shopping_list.collaborators.remove(collaborator)
+    
     db.session.commit()
 
     return jsonify({'message': 'You have successfully left the list and your products have been removed'}), 200
