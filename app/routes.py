@@ -1,16 +1,15 @@
-# app/routes.py
 from datetime import datetime
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from app import db
-from app.models import User, ShoppingList, Product
+from app.models import User, ShoppingList, Product, shopping_list_collaborators
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["500 per day", "50 per hour"]
 )
 
 # User Registration Endpoint
@@ -34,16 +33,19 @@ def register():
     db.session.commit()
 
     access_token = create_access_token(identity=email)
-
+    refresh_token = create_refresh_token(identity=email)
+    
     return jsonify({
-        'message': 'Registration successfully',
-        'access_token': access_token
+        'message': 'Registration successful',
+        'access_token': access_token,
+        'refresh_token': refresh_token
     }), 201
 
 # User Login Endpoint
 @current_app.route('/login', methods=['POST'])
 @limiter.limit("10 per minute")
 def login():
+    print("Login endpoint hit")
     data = request.get_json()
     user = User.query.filter_by(email=data.get('email')).first()
 
@@ -51,16 +53,102 @@ def login():
         return jsonify({'message': 'Invalid email or password'}), 401
 
     access_token = create_access_token(identity=user.email)
+    refresh_token = create_refresh_token(identity=user.email)
+    
     return jsonify({
         'message': 'Login successful',
-        'access_token': access_token
+        'access_token': access_token,
+        'refresh_token': refresh_token
         }), 200
 
 # Token Validation Endpoint
 @current_app.route('/validate-token', methods=['GET'])
 @jwt_required()
 def validate_token():
-    return jsonify({'message': 'Token is valid'}), 200
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+    
+    if user:
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        return jsonify({'message': 'Token is valid'}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
+
+# Endpoint refresh access-JWT
+@current_app.route('/token/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    current_user = get_jwt_identity()
+    new_access_token = create_access_token(identity=current_user)
+    return jsonify({'access_token': new_access_token}), 200
+
+# Enpoint for password change
+@current_app.route('/change_password', methods=['POST'])
+@jwt_required()
+def change_password():
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not user.check_password(current_password):
+        return jsonify({'message': 'Invalid current password'}), 401
+
+    if current_password == new_password:
+        return jsonify({'message': 'New password cannot be the same as the current password'}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+
+    return jsonify({'message': 'Password changed successfully'}), 200
+
+# Enpoint for account deletion
+@current_app.route('/delete_account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    Product.query.filter_by(creator_id=user.id).delete()
+
+    ShoppingList.query.filter_by(owner_id=user.id).delete()
+
+    collaborator_lists = ShoppingList.query.join(shopping_list_collaborators, (ShoppingList.id == shopping_list_collaborators.c.shopping_list_id)).filter(shopping_list_collaborators.c.account_id == user.id).all()
+    for shopping_list in collaborator_lists:
+        shopping_list.collaborators.remove(user)
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return jsonify({'message': 'Account deleted successfully'}), 200
+
+# Endpoint to get user account information
+@current_app.route('/account', methods=['GET'])
+@jwt_required()
+def get_account_info():
+    user_email = get_jwt_identity()
+    user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    account_info = {
+        'account_id': str(user.id),
+        'username': user.username,
+        'email': user.email,
+        'registered_on': user.registered_on.strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+    return jsonify(account_info), 200
 
 # Endpoint to create a shopping list
 @current_app.route('/shopping_lists', methods=['POST'])
@@ -92,11 +180,14 @@ def delete_shopping_list(list_id):
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
-    shopping_list = ShoppingList.query.filter_by(id=list_id, owner_id=user.id).first()
+    shopping_list = ShoppingList.query.filter_by(id=list_id).first()
+    if not shopping_list or (shopping_list.owner_id != user.id and user not in shopping_list.collaborators):
+        return jsonify({'message': 'Shopping list not found or you do not have permission to delete it'}), 403
 
-    if not shopping_list:
-        return jsonify({'message': 'Shopping list not found or you do not have permission to delete it'}), 404
+    Product.query.filter_by(shopping_list_id=shopping_list.id).delete()
 
+    shopping_list.collaborators = []
+    
     db.session.delete(shopping_list)
     db.session.commit()
 
@@ -141,11 +232,13 @@ def remove_collaborator(list_id, collaborator_username):
     if not collaborator or collaborator not in shopping_list.collaborators:
         return jsonify({'message': 'Collaborator not found'}), 404
 
+    Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
+
     shopping_list.collaborators.remove(collaborator)
+
     db.session.commit()
 
-    return jsonify({'message': 'Collaborator removed successfully'}), 200
-
+    return jsonify({'message': 'Collaborator and their products removed successfully'}), 200
 
 # Enpoint to get all owned and collaborating lists
 @current_app.route('/shopping_lists', methods=['GET'])
@@ -187,10 +280,12 @@ def leave_list(list_id):
     if collaborator not in shopping_list.collaborators:
         return jsonify({'message': 'You are not a collaborator of this list'}), 403
 
+    Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
+
     shopping_list.collaborators.remove(collaborator)
     db.session.commit()
 
-    return jsonify({'message': 'You have successfully left the list'}), 200
+    return jsonify({'message': 'You have successfully left the list and your products have been removed'}), 200
 
 # Endpoint to add a product to a shopping list
 @current_app.route('/shopping_lists/<list_id>/products', methods=['POST'])
