@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import current_app, jsonify, request
 from flask_jwt_extended import create_access_token
 from app import db
@@ -6,6 +6,7 @@ from app.models import User, ShoppingList, Product, shopping_list_collaborators
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+import pytz
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -69,7 +70,7 @@ def validate_token():
     user = User.query.filter_by(email=user_email).first()
     
     if user:
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.session.commit()
         return jsonify({'message': 'Token is valid'}), 200
     else:
@@ -261,7 +262,7 @@ def add_collaborator(list_id):
     if not collaborator:
         return jsonify({'message': 'User not found'}), 404
 
-    shopping_list.updated_at = datetime.utcnow()
+    shopping_list.updated_at = datetime.now(timezone.utc)
     shopping_list.collaborators.append(collaborator)
 
     db.session.commit()
@@ -286,7 +287,7 @@ def remove_collaborator(list_id, collaborator_username):
 
     Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
 
-    shopping_list.updated_at = datetime.utcnow()
+    shopping_list.updated_at = datetime.now(timezone.utc)
     shopping_list.collaborators.remove(collaborator)
 
     db.session.commit()
@@ -310,8 +311,8 @@ def get_all_lists():
     lists_data = [{
         'id': shop_list.id,
         'title': shop_list.title,
-        'created_at': shop_list.created_at.isoformat(),
-        'updated_at': shop_list.updated_at.isoformat(),
+        'created_at': shop_list.created_at.replace(tzinfo=pytz.utc).isoformat(),
+        'updated_at': shop_list.updated_at.replace(tzinfo=pytz.utc).isoformat(),
         'owner': shop_list.owner.username, 
         'collaborators': [collaborator.username for collaborator in shop_list.collaborators],
         'is_owner': shop_list.owner_id == user.id
@@ -335,7 +336,7 @@ def leave_list(list_id):
 
     Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
     
-    shopping_list.updated_at = datetime.utcnow()
+    shopping_list.updated_at = datetime.now(timezone.utc)
     shopping_list.collaborators.remove(collaborator)
     
     db.session.commit()
@@ -397,8 +398,8 @@ def get_products(list_id):
         'quantity': product.quantity,
         'unit_of_measurement': product.unit_of_measurement,
         'creator': product.creator.username,
-        'created_at': product.created_at.isoformat(),
-        'updated_at': product.updated_at.isoformat()
+        'created_at': product.created_at.replace(tzinfo=pytz.utc).isoformat(),
+        'updated_at': product.updated_at.replace(tzinfo=pytz.utc).isoformat()
     } for product in products]
 
     return jsonify(product_details), 200
@@ -449,7 +450,7 @@ def update_product(list_id, product_id):
     product.quantity = data.get('quantity', product.quantity)
     product.unit_of_measurement = data.get('unit_of_measurement', product.unit_of_measurement)
     product.creator_id = user.id
-    product.updated_at = datetime.utcnow()
+    product.updated_at = datetime.now(timezone.utc)
 
     db.session.commit()
 
@@ -461,8 +462,8 @@ def update_product(list_id, product_id):
             'quantity': product.quantity,
             'unit_of_measurement': product.unit_of_measurement,
             'creator': product.creator.username,
-            'created_at': product.created_at.isoformat(),
-            'updated_at': product.updated_at.isoformat(),
+            'created_at': product.created_at.replace(tzinfo=pytz.utc).isoformat(),
+            'updated_at': product.updated_at.replace(tzinfo=pytz.utc).isoformat(),
         }
     }), 200
 
