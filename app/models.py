@@ -12,7 +12,7 @@ shopping_list_collaborators = db.Table(
 
 class User(db.Model):
     __tablename__ = 'account'
-    
+
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
@@ -34,7 +34,7 @@ class ShoppingList(db.Model):
     owner_id = db.Column(UUID(as_uuid=True), db.ForeignKey('account.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-    
+
     owner = db.relationship('User', backref=db.backref('owned_shopping_lists', lazy='dynamic'))
     collaborators = db.relationship('User', secondary=shopping_list_collaborators,
                                     backref=db.backref('collaborating_shopping_lists', lazy='dynamic'))
