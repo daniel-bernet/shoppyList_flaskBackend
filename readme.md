@@ -67,9 +67,9 @@ The following Text provides the technical documentation for the DataModel Implem
 - **Normalization:** The database tables are normalized to at least the third normal form.
 - **CRUD Application:** The API supports Create, Read, Update, and Delete operations.
 - **Database Script:** Include a script or instructions for initializing the database tables.
-- **Content Search:** Functionality to search for content within the database.
+- **Content Search:** Functionality to search for content within the database e.g. the lists of a specific user.
 - **Input Validation:** Ensure that data types are respected, e.g., no text in integer fields.
-- **User Feedback:** Provide examples of user feedback for various operations, e.g., validation messages.
+- **User Feedback:** Provide examples of user feedback for various operations, e.g., validation messages, unauthorized request, .
 - **Error Handling:** Detail the error-handling mechanisms, including prompts for user re-entry in case of errors.
 
 ### Component-Diagram
@@ -92,4 +92,4 @@ Defines the SQLAlchemy models for User, ShoppingList, and Product, including the
 
 ### Routes (/app/routes.py)
 
-Defines API endpoints for http requests, including user registration, login, token validation, password change, username edit, as CRUD operations for user management, products and shopping lists.
+Defines API endpoints for http requests, including but not limited to user registration, login, token validation, password change, username edit, as CRUD operations for user management, products and shopping lists.
