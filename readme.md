@@ -14,24 +14,24 @@ The following Text provides the technical documentation for the DataModel Implem
 
 #### User Table (`account`)
 
-| Field               | Data Type          | Description                                            |
-| ------------------- | ------------------ | ------------------------------------------------------ |
-| id                  | UUID (Primary Key) | Unique identifier for the user                         |
-| username            | String (64)        | Username of the user                                   |
-| email               | String (120)       | Email address of the user                              |
-| password_hash       | String (512)       | Hashed password of the user                            |
-| registered_on       | DateTime           | Timestamp when the user was registered                 |
-| last_login          | DateTime           | Timestamp of the user's last login                     |
+| Field         | Data Type          | Description                            |
+| ------------- | ------------------ | -------------------------------------- |
+| id            | UUID (Primary Key) | Unique identifier for the user         |
+| username      | String (64)        | Username of the user                   |
+| email         | String (120)       | Email address of the user              |
+| password_hash | String (512)       | Hashed password of the user            |
+| registered_on | DateTime           | Timestamp when the user was registered |
+| last_login    | DateTime           | Timestamp of the user's last login     |
 
 #### Shopping List Table (`shopping_list`)
 
-| Field               | Data Type          | Description                                            |
-| ------------------- | ------------------ | ------------------------------------------------------ |
-| id                  | UUID (Primary Key) | Unique identifier for the shopping list                |
-| title               | String (120)       | Title of the shopping list                             |
-| owner_id            | UUID (Foreign Key) | Identifier of the user who owns the shopping list      |
-| created_at          | DateTime           | Timestamp when the shopping list was created           |
-| updated_at          | DateTime           | Timestamp when the shopping list was last updated      |
+| Field      | Data Type          | Description                                       |
+| ---------- | ------------------ | ------------------------------------------------- |
+| id         | UUID (Primary Key) | Unique identifier for the shopping list           |
+| title      | String (120)       | Title of the shopping list                        |
+| owner_id   | UUID (Foreign Key) | Identifier of the user who owns the shopping list |
+| created_at | DateTime           | Timestamp when the shopping list was created      |
+| updated_at | DateTime           | Timestamp when the shopping list was last updated |
 
 #### Product Table (`product`)
 
@@ -48,10 +48,10 @@ The following Text provides the technical documentation for the DataModel Implem
 
 #### Shopping List Collaborators (Join Table)
 
-| Field               | Data Type          | Description                                            |
-| ------------------- | ------------------ | ------------------------------------------------------ |
-| shopping_list_id    | UUID (Foreign Key) | Identifier of the shopping list                        |
-| account_id          | UUID (Foreign Key) | Identifier of the collaborating user                   |
+| Field            | Data Type          | Description                          |
+| ---------------- | ------------------ | ------------------------------------ |
+| shopping_list_id | UUID (Foreign Key) | Identifier of the shopping list      |
+| account_id       | UUID (Foreign Key) | Identifier of the collaborating user |
 
 ### Source Code
 
@@ -78,16 +78,9 @@ The following Text provides the technical documentation for the DataModel Implem
 
 ## API Code Overview
 
-### /app.py
+### /app.py and Dockerfile
 
-This script initializes and runs the Flask application.
-
-Host and Port: The application listens on all network interfaces at port 5000.
-SSL Context: The application uses an ad-hoc SSL context for secure connections.
-
-### Dockerfile
-
-Describes the Docker container setup, including the base Python image, dependencies, and exposed port.
+This script initializes and runs the Flask application. The file 'app.py' is used for local deployment, the 'Dockerfile' for deployment as a Docker-Container. The file describes the deployment, local or container respectevly, setup, including the base Python image, dependencies, and exposed port.
 
 ### /app/init.py
 
