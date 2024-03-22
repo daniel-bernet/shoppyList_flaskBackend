@@ -35,7 +35,7 @@ def register():
 
     access_token = create_access_token(identity=email)
     refresh_token = create_refresh_token(identity=email)
-    
+
     return jsonify({
         'message': 'Registration successful',
         'access_token': access_token,
@@ -55,7 +55,10 @@ def login():
 
     access_token = create_access_token(identity=user.email)
     refresh_token = create_refresh_token(identity=user.email)
-    
+
+    user.last_login = datetime.now(timezone.utc)
+    db.session.commit()
+
     return jsonify({
         'message': 'Login successful',
         'access_token': access_token,
@@ -68,7 +71,7 @@ def login():
 def validate_token():
     user_email = get_jwt_identity()
     user = User.query.filter_by(email=user_email).first()
-    
+
     if user:
         user.last_login = datetime.now(timezone.utc)
         db.session.commit()
@@ -238,7 +241,7 @@ def delete_shopping_list(list_id):
     Product.query.filter_by(shopping_list_id=shopping_list.id).delete()
 
     shopping_list.collaborators = []
-    
+
     db.session.delete(shopping_list)
     db.session.commit()
 
@@ -335,10 +338,10 @@ def leave_list(list_id):
         return jsonify({'message': 'You are not a collaborator of this list'}), 403
 
     Product.query.filter_by(shopping_list_id=list_id, creator_id=collaborator.id).delete()
-    
+
     shopping_list.updated_at = datetime.now(timezone.utc)
     shopping_list.collaborators.remove(collaborator)
-    
+
     db.session.commit()
 
     return jsonify({'message': 'You have successfully left the list and your products have been removed'}), 200

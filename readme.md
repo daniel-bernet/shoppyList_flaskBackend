@@ -14,24 +14,24 @@ The following Text provides the technical documentation for the DataModel Implem
 
 #### User Table (`account`)
 
-| Field         | Data Type          | Description                            |
-| ------------- | ------------------ | -------------------------------------- |
-| id            | UUID (Primary Key) | Unique identifier for the user         |
-| username      | String (64)        | Username of the user                   |
-| email         | String (120)       | Email address of the user              |
-| password_hash | String (512)       | Hashed password of the user            |
-| registered_on | DateTime           | Timestamp when the user was registered |
-| last_login    | DateTime           | Timestamp of the user's last login     |
+| Field               | Data Type          | Description                                            |
+| ------------------- | ------------------ | ------------------------------------------------------ |
+| id                  | UUID (Primary Key) | Unique identifier for the user                         |
+| username            | String (64)        | Username of the user                                   |
+| email               | String (120)       | Email address of the user                              |
+| password_hash       | String (512)       | Hashed password of the user                            |
+| registered_on       | DateTime           | Timestamp when the user was registered                 |
+| last_login          | DateTime           | Timestamp of the user's last login                     |
 
 #### Shopping List Table (`shopping_list`)
 
-| Field      | Data Type          | Description                                       |
-| ---------- | ------------------ | ------------------------------------------------- |
-| id         | UUID (Primary Key) | Unique identifier for the shopping list           |
-| title      | String (120)       | Title of the shopping list                        |
-| owner_id   | UUID (Foreign Key) | Identifier of the user who owns the shopping list |
-| created_at | DateTime           | Timestamp when the shopping list was created      |
-| updated_at | DateTime           | Timestamp when the shopping list was last updated |
+| Field               | Data Type          | Description                                            |
+| ------------------- | ------------------ | ------------------------------------------------------ |
+| id                  | UUID (Primary Key) | Unique identifier for the shopping list                |
+| title               | String (120)       | Title of the shopping list                             |
+| owner_id            | UUID (Foreign Key) | Identifier of the user who owns the shopping list      |
+| created_at          | DateTime           | Timestamp when the shopping list was created           |
+| updated_at          | DateTime           | Timestamp when the shopping list was last updated      |
 
 #### Product Table (`product`)
 
@@ -48,10 +48,10 @@ The following Text provides the technical documentation for the DataModel Implem
 
 #### Shopping List Collaborators (Join Table)
 
-| Field            | Data Type          | Description                          |
-| ---------------- | ------------------ | ------------------------------------ |
-| shopping_list_id | UUID (Foreign Key) | Identifier of the shopping list      |
-| account_id       | UUID (Foreign Key) | Identifier of the collaborating user |
+| Field               | Data Type          | Description                                            |
+| ------------------- | ------------------ | ------------------------------------------------------ |
+| shopping_list_id    | UUID (Foreign Key) | Identifier of the shopping list                        |
+| account_id          | UUID (Foreign Key) | Identifier of the collaborating user                   |
 
 ### Source Code
 
@@ -74,7 +74,7 @@ The following Text provides the technical documentation for the DataModel Implem
 
 ### Component-Diagram
 
-![Component Diagram](/documentation/flask-api_component_diagram.png)
+![Component Diagram](/documentation/component_diagram.png)
 
 ## API Code Overview
 
