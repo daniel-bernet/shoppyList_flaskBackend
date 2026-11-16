@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -11,9 +12,9 @@ limiter = Limiter(key_func=get_remote_address)
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:REDACTED_DB_PASSWORD@DB_HOST:5432/shop_list'
-    app.config['SECRET_KEY'] = 'REDACTED_SECRET_KEY'
-    app.config['JWT_SECRET_KEY'] = 'REDACTED_JWT_SECRET_KEY'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+    app.config['JWT_SECRET_KEY'] = os.environ['JWT_SECRET_KEY']
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
     app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(weeks=25)
 
