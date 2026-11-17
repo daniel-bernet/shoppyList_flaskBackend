@@ -8,7 +8,7 @@ A Flask REST API with PostgreSQL and JWT authentication: the backend of the Shop
 
 ShoppyList was a school project (apprenticeship, 2024): a shopping-list app whose lists can be shared with other users. The Flutter client is in [shoppyList_mobileApplication](https://github.com/daniel-bernet/shoppyList_mobileApplication). This repository is the API it talks to.
 
-The app started out on Firebase. After the first week I replaced Firebase with this API and my own PostgreSQL database. During the project, the API and the database ran as Docker containers on my Unraid server at home, behind an NGINX reverse proxy that handled HTTPS. It is no longer deployed.
+I evaluated Firebase briefly at the start, then wrote this API and my own PostgreSQL database instead (not required by the assignment). During the project, the API and the database ran as Docker containers on my Unraid server at home, behind an NGINX reverse proxy that handled HTTPS. It is no longer deployed.
 
 What the API does:
 
